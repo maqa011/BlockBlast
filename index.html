@@ -2,331 +2,354 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Block Blast Pro - GitHub Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Block Blast Pro - Drag & Drop</title>
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            --bg: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
             --accent: #38bdf8;
-            --card-bg: rgba(30, 41, 59, 0.8);
-            --block-border: rgba(255, 255, 255, 0.1);
+            --cell-size: 45px;
         }
 
         body {
-            background: var(--bg-gradient);
-            background-attachment: fixed;
-            color: #f8fafc;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: radial-gradient(circle at center, #1e293b, #0f172a);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none; /* Mobil üçün sürüşməni bağlayır */
+        }
+
+        /* Sol Sıralama Paneli */
+        #leaderboard-panel {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 220px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem;
+        }
+
+        /* Mərkəzi Oyun Sahəsi */
+        #main-game {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0;
-            min-height: 100vh;
-            touch-action: none;
+            gap: 20px;
         }
 
-        /* Ad Soruşma Paneli */
+        canvas {
+            touch-action: none;
+            cursor: grab;
+        }
+
+        canvas:active { cursor: grabbing; }
+
+        #blocks-tray {
+            display: flex;
+            gap: 20px;
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        /* Ad soruşma ekranı */
         #nameModal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
+            background: rgba(15, 23, 42, 0.95);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
 
-        .modal-content {
+        .modal-box {
             background: #1e293b;
             padding: 40px;
-            border-radius: 24px;
-            border: 2px solid var(--accent);
+            border-radius: 25px;
             text-align: center;
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
-            width: 300px;
+            border: 2px solid var(--accent);
         }
 
         input {
-            width: 100%;
             padding: 12px;
-            margin: 20px 0;
             border-radius: 8px;
-            border: 1px solid #334155;
+            border: none;
+            width: 100%;
+            margin: 15px 0;
             background: #0f172a;
             color: white;
             text-align: center;
-            box-sizing: border-box;
         }
 
         button {
             background: var(--accent);
             color: white;
-            padding: 12px 30px;
             border: none;
-            border-radius: 12px;
+            padding: 10px 25px;
+            border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s;
         }
 
-        button:hover { transform: scale(1.05); }
-
-        /* Oyun Sahəsi */
-        #game-container {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
+        .stats-top {
+            font-size: 1.5rem;
             font-weight: bold;
-            background: var(--card-bg);
-            padding: 10px 30px;
-            border-radius: 50px;
-        }
-
-        #grid-canvas {
-            background: rgba(15, 23, 42, 0.9);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            border: 4px solid #334155;
-        }
-
-        /* Aşağıdakı 3 Blok Paneli */
-        #blocks-tray {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-            height: 120px;
-            align-items: center;
-        }
-
-        .shape-option {
-            background: var(--card-bg);
-            border: 2px solid var(--block-border);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .shape-option:hover {
-            border-color: var(--accent);
-            background: rgba(56, 189, 248, 0.1);
-        }
-
-        .selected {
-            border-color: #4ade80 !important;
-            transform: translateY(-5px);
-        }
-
-        #leaderboard {
-            margin-top: 30px;
-            width: 320px;
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 15px;
-        }
-
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #334155;
+            text-shadow: 0 0 10px var(--accent);
         }
     </style>
 </head>
 <body>
 
-    <div id="nameModal">
-        <div class="modal-content">
-            <h2 style="color: var(--accent); margin: 0;">XOŞ GƏLDİN!</h2>
-            <p>Sıralamada görünmək üçün adını yaz:</p>
-            <input type="text" id="userNameInput" placeholder="Məsələn: Kral_01">
-            <button onclick="initPlayer()">OYUNA BAŞLA</button>
-        </div>
+<div id="nameModal">
+    <div class="modal-box">
+        <h2>XOŞ GƏLDİNİZ</h2>
+        <p>Sıralama üçün adınızı daxil edin:</p>
+        <input type="text" id="nameInput" placeholder="Oyunçu adı...">
+        <button onclick="startGame()">OYUNA BAŞLA</button>
     </div>
+</div>
 
-    <div id="game-container">
-        <div class="stats">
-            <span>👤 <span id="pName">...</span></span>
-            <span>🏆 <span id="pTrophies">0</span></span>
-        </div>
+<div id="leaderboard-panel">
+    <h3 style="margin-top: 0; color: var(--accent);">🏆 TOP 10</h3>
+    <div id="rankList"></div>
+</div>
 
-        <canvas id="grid-canvas" width="320" height="320"></canvas>
-
-        <div id="blocks-tray">
-            <canvas id="opt1" class="shape-option" width="80" height="80" onclick="selectShape(0)"></canvas>
-            <canvas id="opt2" class="shape-option" width="80" height="80" onclick="selectShape(1)"></canvas>
-            <canvas id="opt3" class="shape-option" width="80" height="80" onclick="selectShape(2)"></canvas>
-        </div>
-
-        <div id="leaderboard">
-            <h3 style="text-align:center; margin-top:0;">📊 TOP 5 SIRALAMA</h3>
-            <div id="rankList"></div>
-        </div>
+<div id="main-game">
+    <div class="stats-top">Kupa: <span id="trophyDisplay">0</span></div>
+    <canvas id="gameGrid" width="360" height="360"></canvas>
+    <div id="blocks-tray">
+        <canvas id="block0" width="90" height="90"></canvas>
+        <canvas id="block1" width="90" height="90"></canvas>
+        <canvas id="block2" width="90" height="90"></canvas>
     </div>
+</div>
 
-    <script>
-        const GRID_SIZE = 8;
-        const CELL = 40;
-        let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
-        let shapes = [null, null, null];
-        let selectedIndex = -1;
-        let pData = { name: "", trophies: 0 };
+<script>
+    const GRID_SIZE = 8;
+    const CELL = 45;
+    let grid = Array(8).fill().map(() => Array(8).fill(0));
+    let shapes = [null, null, null];
+    let draggingIdx = -1;
+    let playerName = "";
+    let trophies = 0;
 
-        const SHAPES_DATA = [
-            [[1, 1], [1, 1]], // Kvadrat
-            [[1, 1, 1]],      // Yatay xətt
-            [[1], [1], [1]],  // Şaquli xətt
-            [[1, 0], [1, 1]], // L formalı
-            [[1]]             // Tək blok
-        ];
+    // Blok Fiqurları
+    const SHAPES = [
+        [[1,1],[1,1]], // Kvadrat
+        [[1,1,1,1]],   // Uzun xətt
+        [[1,1,1],[0,1,0]], // T formalı
+        [[1,1,0],[0,1,1]], // Z formalı
+        [[1,1,1]], // Kiçik xətt
+        [[1,1],[1,0]] // Künc
+    ];
 
-        function initPlayer() {
-            let name = document.getElementById('userNameInput').value.trim();
-            if(name.length < 2) return alert("Ad çox qısadır!");
-            
-            pData.name = name;
-            localStorage.setItem('bb_name', name);
-            pData.trophies = parseInt(localStorage.getItem('bb_trophies_' + name)) || 0;
-            
-            document.getElementById('nameModal').style.display = 'none';
-            document.getElementById('pName').innerText = name;
-            document.getElementById('pTrophies').innerText = pData.trophies;
-            
-            generateNewShapes();
-            drawAll();
-            updateLeaderboard();
+    const gridCanvas = document.getElementById('gameGrid');
+    const gCtx = gridCanvas.getContext('2d');
+    
+    // Maus və toxunuş koordinatları
+    let mouseX = 0, mouseY = 0;
+    let isDragging = false;
+
+    function startGame() {
+        const input = document.getElementById('nameInput').value;
+        if(input.length < 2) return;
+        playerName = input;
+        document.getElementById('nameModal').style.display = 'none';
+        generateShapes();
+        updateLeaderboard();
+        draw();
+    }
+
+    function generateShapes() {
+        for(let i=0; i<3; i++) {
+            shapes[i] = SHAPES[Math.floor(Math.random()*SHAPES.length)];
         }
+    }
 
-        function generateNewShapes() {
-            for(let i=0; i<3; i++) {
-                shapes[i] = SHAPES_DATA[Math.floor(Math.random() * SHAPES_DATA.length)];
+    function draw() {
+        gCtx.clearRect(0,0,360,360);
+        
+        // Arxa plan toru (Grid)
+        for(let r=0; r<8; r++) {
+            for(let c=0; c<8; c++) {
+                gCtx.fillStyle = grid[r][c] ? "#38bdf8" : "rgba(255,255,255,0.05)";
+                gCtx.fillRect(c*CELL + 2, r*CELL + 2, CELL-4, CELL-4);
             }
         }
 
-        function drawAll() {
-            const canvas = document.getElementById('grid-canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0,0,320,320);
-
-            // Lövhəni çək
-            for(let r=0; r<8; r++) {
-                for(let c=0; c<8; c++) {
-                    ctx.strokeStyle = "#334155";
-                    ctx.strokeRect(c*CELL, r*CELL, CELL, CELL);
-                    if(grid[r][c]) {
-                        ctx.fillStyle = "#38bdf8";
-                        ctx.fillRect(c*CELL+2, r*CELL+2, CELL-4, CELL-4);
-                    }
-                }
-            }
-
-            // Variantları çək
-            for(let i=0; i<3; i++) {
-                const optCanvas = document.getElementById('opt' + (i+1));
-                const oCtx = optCanvas.getContext('2d');
-                oCtx.clearRect(0,0,80,80);
-                if(!shapes[i]) continue;
-
-                oCtx.fillStyle = "#fbbf24";
-                shapes[i].forEach((row, rIdx) => {
-                    row.forEach((cell, cIdx) => {
-                        if(cell) oCtx.fillRect(cIdx*15+15, rIdx*15+15, 13, 13);
+        // Ghost Preview (İz)
+        if(isDragging && draggingIdx !== -1) {
+            const rect = gridCanvas.getBoundingClientRect();
+            let c = Math.floor((mouseX - rect.left) / CELL);
+            let r = Math.floor((mouseY - rect.top) / CELL);
+            
+            if(canPlace(r, c, shapes[draggingIdx])) {
+                gCtx.fillStyle = "rgba(56, 189, 248, 0.3)";
+                shapes[draggingIdx].forEach((row, ri) => {
+                    row.forEach((v, ci) => {
+                        if(v) gCtx.fillRect((c+ci)*CELL + 2, (r+ri)*CELL + 2, CELL-4, CELL-4);
                     });
                 });
             }
         }
 
-        function selectShape(idx) {
-            if(!shapes[idx]) return;
-            selectedIndex = idx;
-            document.querySelectorAll('.shape-option').forEach(el => el.classList.remove('selected'));
-            document.getElementById('opt' + (idx+1)).classList.add('selected');
-        }
-
-        document.getElementById('grid-canvas').addEventListener('click', function(e) {
-            if(selectedIndex === -1) return;
-
-            const rect = this.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const col = Math.floor(x / CELL);
-            const row = Math.floor(y / CELL);
-
-            if(canPlace(row, col, shapes[selectedIndex])) {
-                placeShape(row, col, shapes[selectedIndex]);
-                shapes[selectedIndex] = null;
-                selectedIndex = -1;
-                document.querySelectorAll('.shape-option').forEach(el => el.classList.remove('selected'));
-                
-                checkLines();
-                
-                if(shapes.every(s => s === null)) generateNewShapes();
-                
-                pData.trophies += Math.floor(Math.random() * 10) + 5;
-                localStorage.setItem('bb_trophies_' + pData.name, pData.trophies);
-                document.getElementById('pTrophies').innerText = pData.trophies;
-                
-                drawAll();
-                updateLeaderboard();
-            }
-        });
-
-        function canPlace(row, col, shape) {
-            for(let r=0; r<shape.length; r++) {
-                for(let c=0; c<shape[r].length; c++) {
-                    if(shape[r][c]) {
-                        if(row+r >= 8 || col+c >= 8 || grid[row+r][col+c]) return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        function placeShape(row, col, shape) {
-            for(let r=0; r<shape.length; r++) {
-                for(let c=0; c<shape[r].length; c++) {
-                    if(shape[r][c]) grid[row+r][col+c] = 1;
-                }
-            }
-        }
-
-        function checkLines() {
-            // Sadələşdirilmiş sətir silmə (Blok partlaması)
-            for(let r=0; r<8; r++) {
-                if(grid[r].every(cell => cell === 1)) grid[r] = Array(8).fill(0);
-            }
-        }
-
-        function updateLeaderboard() {
-            // Bu hissə eyni cihazdakı adları simulyasiya edir
-            let scores = [];
-            for(let i=0; i<localStorage.length; i++) {
-                let key = localStorage.key(i);
-                if(key.startsWith('bb_trophies_')) {
-                    scores.push({
-                        name: key.replace('bb_trophies_', ''),
-                        score: parseInt(localStorage.getItem(key))
+        // Aşağıdakı seçimləri çək
+        for(let i=0; i<3; i++) {
+            const bc = document.getElementById('block' + i);
+            const bCtx = bc.getContext('2d');
+            bCtx.clearRect(0,0,90,90);
+            if(shapes[i] && draggingIdx !== i) {
+                bCtx.fillStyle = "#fbbf24";
+                shapes[i].forEach((row, ri) => {
+                    row.forEach((v, ci) => {
+                        if(v) bCtx.fillRect(ci*18 + 15, ri*18 + 15, 16, 16);
                     });
+                });
+            }
+        }
+        
+        // Əgər sürüklənirsə, mausun yanında bloku çək
+        if(isDragging && draggingIdx !== -1) {
+            const shape = shapes[draggingIdx];
+            gCtx.fillStyle = "#fbbf24";
+            shape.forEach((row, ri) => {
+                row.forEach((v, ci) => {
+                    if(v) gCtx.fillRect(mouseX - gridCanvas.getBoundingClientRect().left + ci*CELL - CELL/2, 
+                                       mouseY - gridCanvas.getBoundingClientRect().top + ri*CELL - CELL/2, 
+                                       CELL-4, CELL-4);
+                });
+            });
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    // Drag Məntiqi
+    window.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY));
+    window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+    window.addEventListener('mouseup', handleEnd);
+
+    window.addEventListener('touchstart', e => handleStart(e.touches[0].clientX, e.touches[0].clientY));
+    window.addEventListener('touchmove', e => { 
+        mouseX = e.touches[0].clientX; 
+        mouseY = e.touches[0].clientY; 
+    });
+    window.addEventListener('touchend', handleEnd);
+
+    function handleStart(x, y) {
+        for(let i=0; i<3; i++) {
+            const rect = document.getElementById('block' + i).getBoundingClientRect();
+            if(x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                if(shapes[i]) {
+                    draggingIdx = i;
+                    isDragging = true;
                 }
             }
-            scores.sort((a,b) => b.score - a.score);
-            
-            const list = document.getElementById('rankList');
-            list.innerHTML = scores.slice(0, 5).map((s, i) => `
-                <div class="rank-item">
-                    <span>${i+1}. ${s.name}</span>
-                    <b>${s.score} 🏆</b>
-                </div>
-            `).join('');
         }
-    </script>
+    }
+
+    function handleEnd() {
+        if(!isDragging) return;
+        const rect = gridCanvas.getBoundingClientRect();
+        let c = Math.floor((mouseX - rect.left) / CELL);
+        let r = Math.floor((mouseY - rect.top) / CELL);
+
+        if(canPlace(r, c, shapes[draggingIdx])) {
+            placeShape(r, c, shapes[draggingIdx]);
+            shapes[draggingIdx] = null;
+            checkLines();
+            addTrophy();
+            if(shapes.every(s => s === null)) generateShapes();
+        }
+
+        isDragging = false;
+        draggingIdx = -1;
+    }
+
+    function canPlace(r, c, shape) {
+        if(!shape) return false;
+        for(let i=0; i<shape.length; i++) {
+            for(let j=0; j<shape[i].length; j++) {
+                if(shape[i][j]) {
+                    if(r+i < 0 || r+i >= 8 || c+j < 0 || c+j >= 8 || grid[r+i][c+j]) return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    function placeShape(r, c, shape) {
+        shape.forEach((row, ri) => {
+            row.forEach((v, ci) => {
+                if(v) grid[r+ri][c+ci] = 1;
+            });
+        });
+    }
+
+    function checkLines() {
+        let linesCleared = 0;
+        // Sətir yoxla
+        for(let r=0; r<8; r++) {
+            if(grid[r].every(v => v === 1)) {
+                grid[r] = Array(8).fill(0);
+                linesCleared++;
+            }
+        }
+        // Sütun yoxla
+        for(let c=0; c<8; c++) {
+            let full = true;
+            for(let r=0; r<8; r++) if(!grid[r][c]) full = false;
+            if(full) {
+                for(let r=0; r<8; r++) grid[r][c] = 0;
+                linesCleared++;
+            }
+        }
+    }
+
+    function addTrophy() {
+        trophies += Math.floor(Math.random() * 20) + 10;
+        document.getElementById('trophyDisplay').innerText = trophies;
+        localStorage.setItem('score_' + playerName, trophies);
+        updateLeaderboard();
+    }
+
+    function updateLeaderboard() {
+        let players = [];
+        for(let i=0; i<localStorage.length; i++) {
+            let k = localStorage.key(i);
+            if(k.startsWith('score_')) {
+                players.push({name: k.replace('score_', ''), score: parseInt(localStorage.getItem(k))});
+            }
+        }
+        players.sort((a,b) => b.score - a.score);
+        document.getElementById('rankList').innerHTML = players.slice(0, 10).map((p, i) => `
+            <div class="rank-item">
+                <span>${i+1}. ${p.name}</span>
+                <b color="#38bdf8">${p.score}</b>
+            </div>
+        `).join('');
+    }
+</script>
+
 </body>
 </html>
