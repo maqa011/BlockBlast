@@ -3,353 +3,418 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Block Blast Pro - Drag & Drop</title>
+    <title>Block Blast Ultimate - Pro Edition</title>
     <style>
         :root {
-            --bg: #0f172a;
-            --panel-bg: rgba(30, 41, 59, 0.7);
-            --accent: #38bdf8;
-            --cell-size: 45px;
+            /* Şəkildəki rənglər */
+            --bg-color: #3b4a8b; /* Şəkildəki tünd mavi arxa fon */
+            --grid-bg: #2d396d;
+            --panel-bg: rgba(23, 32, 70, 0.8);
+            --accent: #ffcc00;
+            --text-color: #ffffff;
         }
 
         body {
-            background: radial-gradient(circle at center, #1e293b, #0f172a);
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Arial Rounded MT Bold', 'Helvetica', sans-serif;
             margin: 0;
             display: flex;
+            flex-direction: row; /* Sıralama solda olsun deyə */
             justify-content: center;
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            touch-action: none; /* Mobil üçün sürüşməni bağlayır */
+            touch-action: none;
         }
 
         /* Sol Sıralama Paneli */
-        #leaderboard-panel {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 220px;
+        #side-panel {
+            width: 250px;
+            height: 80vh;
             background: var(--panel-bg);
-            backdrop-filter: blur(10px);
-            padding: 20px;
+            margin-right: 40px;
             border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 20px;
+            border: 3px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .leaderboard-title {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #rankList {
+            flex-grow: 1;
+            overflow-y: auto;
         }
 
         .rank-item {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.9rem;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            font-size: 1.1rem;
         }
 
-        /* Mərkəzi Oyun Sahəsi */
-        #main-game {
+        /* Oyun Sahəsi */
+        #game-area {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 25px;
         }
 
-        canvas {
-            touch-action: none;
-            cursor: grab;
-        }
-
-        canvas:active { cursor: grabbing; }
-
-        #blocks-tray {
-            display: flex;
-            gap: 20px;
-            background: var(--panel-bg);
-            padding: 15px;
-            border-radius: 15px;
-        }
-
-        /* Ad soruşma ekranı */
-        #nameModal {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-box {
-            background: #1e293b;
-            padding: 40px;
-            border-radius: 25px;
-            text-align: center;
-            border: 2px solid var(--accent);
-        }
-
-        input {
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            width: 100%;
-            margin: 15px 0;
-            background: #0f172a;
-            color: white;
-            text-align: center;
-        }
-
-        button {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 10px;
+        .score-container {
+            font-size: 60px;
             font-weight: bold;
+            text-shadow: 2px 4px 0px rgba(0,0,0,0.3);
+        }
+
+        #board-canvas {
+            background: var(--grid-bg);
+            border-radius: 10px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.3);
             cursor: pointer;
         }
 
-        .stats-top {
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-shadow: 0 0 10px var(--accent);
+        #tray {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
         }
+
+        .tray-cell {
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Giriş Modalı */
+        #auth-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.98);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .modal-content {
+            background: #2d396d;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            width: 350px;
+            border: 4px solid var(--accent);
+        }
+
+        input {
+            width: 80%;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: none;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .btn-start {
+            background: var(--accent);
+            color: #000;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-start:hover { transform: scale(1.1); }
     </style>
 </head>
 <body>
 
-<div id="nameModal">
-    <div class="modal-box">
-        <h2>XOŞ GƏLDİNİZ</h2>
-        <p>Sıralama üçün adınızı daxil edin:</p>
-        <input type="text" id="nameInput" placeholder="Oyunçu adı...">
-        <button onclick="startGame()">OYUNA BAŞLA</button>
+<div id="auth-modal">
+    <div class="modal-content">
+        <h1 style="margin:0; color:white">BLOCK BLAST</h1>
+        <p>Adınızı daxil edin:</p>
+        <input type="text" id="pNameInput" placeholder="Məs: Tural_92">
+        <br>
+        <button class="btn-start" onclick="initGame()">BAŞLA</button>
     </div>
 </div>
 
-<div id="leaderboard-panel">
-    <h3 style="margin-top: 0; color: var(--accent);">🏆 TOP 10</h3>
+<div id="side-panel">
+    <div class="leaderboard-title">🏆 TOP 10</div>
     <div id="rankList"></div>
 </div>
 
-<div id="main-game">
-    <div class="stats-top">Kupa: <span id="trophyDisplay">0</span></div>
-    <canvas id="gameGrid" width="360" height="360"></canvas>
-    <div id="blocks-tray">
-        <canvas id="block0" width="90" height="90"></canvas>
-        <canvas id="block1" width="90" height="90"></canvas>
-        <canvas id="block2" width="90" height="90"></canvas>
+<div id="game-area">
+    <div class="score-container" id="currentScore">0</div>
+    <canvas id="board-canvas" width="400" height="400"></canvas>
+    <div id="tray">
+        <canvas id="t0" width="100" height="100"></canvas>
+        <canvas id="t1" width="100" height="100"></canvas>
+        <canvas id="t2" width="100" height="100"></canvas>
     </div>
 </div>
 
 <script>
+    const canvas = document.getElementById('board-canvas');
+    const ctx = canvas.getContext('2d');
+    const trayCanvases = [document.getElementById('t0'), document.getElementById('t1'), document.getElementById('t2')];
+    
     const GRID_SIZE = 8;
-    const CELL = 45;
-    let grid = Array(8).fill().map(() => Array(8).fill(0));
-    let shapes = [null, null, null];
-    let draggingIdx = -1;
-    let playerName = "";
-    let trophies = 0;
+    const CELL_SIZE = 50;
+    let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+    let trayShapes = [null, null, null];
+    let score = 0;
+    let user = "";
 
-    // Blok Fiqurları
-    const SHAPES = [
-        [[1,1],[1,1]], // Kvadrat
-        [[1,1,1,1]],   // Uzun xətt
-        [[1,1,1],[0,1,0]], // T formalı
-        [[1,1,0],[0,1,1]], // Z formalı
-        [[1,1,1]], // Kiçik xətt
-        [[1,1],[1,0]] // Künc
+    // Blok rəngləri (Şəkildəki rənglər)
+    const COLORS = {
+        blue: { main: '#4da6ff', light: '#99ccff', dark: '#0066cc' },
+        red: { main: '#ff4d4d', light: '#ff9999', dark: '#cc0000' },
+        green: { main: '#66cc66', light: '#99ff99', dark: '#009900' },
+        yellow: { main: '#ffcc00', light: '#ffff66', dark: '#b38f00' },
+        purple: { main: '#a64dff', light: '#cc99ff', dark: '#6600cc' },
+        orange: { main: '#ff944d', light: '#ffc299', dark: '#cc5200' }
+    };
+
+    const SHAPE_TYPES = [
+        { data: [[1,1],[1,1]], color: 'green' },
+        { data: [[1,1,1,1]], color: 'blue' },
+        { data: [[1,1,1],[0,1,0]], color: 'purple' },
+        { data: [[1,0],[1,0],[1,1]], color: 'orange' },
+        { data: [[1,1,1]], color: 'yellow' },
+        { data: [[1]], color: 'red' }
     ];
 
-    const gridCanvas = document.getElementById('gameGrid');
-    const gCtx = gridCanvas.getContext('2d');
-    
-    // Maus və toxunuş koordinatları
-    let mouseX = 0, mouseY = 0;
+    let dragItem = null;
     let isDragging = false;
+    let mousePos = { x: 0, y: 0 };
 
-    function startGame() {
-        const input = document.getElementById('nameInput').value;
-        if(input.length < 2) return;
-        playerName = input;
-        document.getElementById('nameModal').style.display = 'none';
-        generateShapes();
+    function initGame() {
+        const name = document.getElementById('pNameInput').value.trim();
+        if(!name) return alert("Ad yazın!");
+        user = name;
+        document.getElementById('auth-modal').style.display = 'none';
+        generateTray();
         updateLeaderboard();
-        draw();
+        render();
     }
 
-    function generateShapes() {
+    // Blokun dizaynı (3D Bevel effekti)
+    function drawBlock(ctx, x, y, size, colorKey, alpha = 1) {
+        const c = COLORS[colorKey];
+        ctx.globalAlpha = alpha;
+        
+        // Əsas bədən
+        ctx.fillStyle = c.main;
+        ctx.fillRect(x, y, size, size);
+
+        // Üst işıq (Bevel)
+        ctx.fillStyle = c.light;
+        ctx.beginPath();
+        ctx.moveTo(x, y); ctx.lineTo(x+size, y); ctx.lineTo(x+size-4, y+4); ctx.lineTo(x+4, y+4);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x, y); ctx.lineTo(x, y+size); ctx.lineTo(x+4, y+size-4); ctx.lineTo(x+4, y+4);
+        ctx.fill();
+
+        // Alt kölgə
+        ctx.fillStyle = c.dark;
+        ctx.beginPath();
+        ctx.moveTo(x+size, y+size); ctx.lineTo(x, y+size); ctx.lineTo(x+4, y+size-4); ctx.lineTo(x+size-4, y+size-4);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x+size, y+size); ctx.lineTo(x+size, y); ctx.lineTo(x+size-4, y+4); ctx.lineTo(x+size-4, y+size-4);
+        ctx.fill();
+        
+        ctx.strokeStyle = "rgba(0,0,0,0.1)";
+        ctx.strokeRect(x, y, size, size);
+        ctx.globalAlpha = 1;
+    }
+
+    function generateTray() {
         for(let i=0; i<3; i++) {
-            shapes[i] = SHAPES[Math.floor(Math.random()*SHAPES.length)];
+            trayShapes[i] = SHAPE_TYPES[Math.floor(Math.random()*SHAPE_TYPES.length)];
         }
     }
 
-    function draw() {
-        gCtx.clearRect(0,0,360,360);
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Arxa plan toru (Grid)
+        // Grid çək
         for(let r=0; r<8; r++) {
             for(let c=0; c<8; c++) {
-                gCtx.fillStyle = grid[r][c] ? "#38bdf8" : "rgba(255,255,255,0.05)";
-                gCtx.fillRect(c*CELL + 2, r*CELL + 2, CELL-4, CELL-4);
+                ctx.fillStyle = "rgba(0,0,0,0.15)";
+                ctx.fillRect(c*CELL_SIZE + 1, r*CELL_SIZE + 1, CELL_SIZE-2, CELL_SIZE-2);
+                if(grid[r][c]) {
+                    drawBlock(ctx, c*CELL_SIZE, r*CELL_SIZE, CELL_SIZE, grid[r][c]);
+                }
             }
         }
 
-        // Ghost Preview (İz)
-        if(isDragging && draggingIdx !== -1) {
-            const rect = gridCanvas.getBoundingClientRect();
-            let c = Math.floor((mouseX - rect.left) / CELL);
-            let r = Math.floor((mouseY - rect.top) / CELL);
-            
-            if(canPlace(r, c, shapes[draggingIdx])) {
-                gCtx.fillStyle = "rgba(56, 189, 248, 0.3)";
-                shapes[draggingIdx].forEach((row, ri) => {
+        // Tray çək
+        trayCanvases.forEach((tc, i) => {
+            const tctx = tc.getContext('2d');
+            tctx.clearRect(0,0,100,100);
+            if(trayShapes[i] && dragItem?.idx !== i) {
+                const shape = trayShapes[i];
+                shape.data.forEach((row, ri) => {
                     row.forEach((v, ci) => {
-                        if(v) gCtx.fillRect((c+ci)*CELL + 2, (r+ri)*CELL + 2, CELL-4, CELL-4);
+                        if(v) drawBlock(tctx, ci*20 + 20, ri*20 + 20, 18, shape.color);
                     });
                 });
             }
-        }
+        });
 
-        // Aşağıdakı seçimləri çək
-        for(let i=0; i<3; i++) {
-            const bc = document.getElementById('block' + i);
-            const bCtx = bc.getContext('2d');
-            bCtx.clearRect(0,0,90,90);
-            if(shapes[i] && draggingIdx !== i) {
-                bCtx.fillStyle = "#fbbf24";
-                shapes[i].forEach((row, ri) => {
+        // Sürüklənən blokun "Ghost" izi və özü
+        if(isDragging && dragItem) {
+            const rect = canvas.getBoundingClientRect();
+            const gx = Math.floor((mousePos.x - rect.left) / CELL_SIZE);
+            const gy = Math.floor((mousePos.y - rect.top) / CELL_SIZE);
+
+            if(canPlace(gy, gx, dragItem.shape.data)) {
+                dragItem.shape.data.forEach((row, ri) => {
                     row.forEach((v, ci) => {
-                        if(v) bCtx.fillRect(ci*18 + 15, ri*18 + 15, 16, 16);
+                        if(v) drawBlock(ctx, (gx+ci)*CELL_SIZE, (gy+ri)*CELL_SIZE, CELL_SIZE, dragItem.shape.color, 0.4);
                     });
                 });
             }
-        }
-        
-        // Əgər sürüklənirsə, mausun yanında bloku çək
-        if(isDragging && draggingIdx !== -1) {
-            const shape = shapes[draggingIdx];
-            gCtx.fillStyle = "#fbbf24";
-            shape.forEach((row, ri) => {
+
+            // Real vaxtda blokun özü (mausun ucunda)
+            dragItem.shape.data.forEach((row, ri) => {
                 row.forEach((v, ci) => {
-                    if(v) gCtx.fillRect(mouseX - gridCanvas.getBoundingClientRect().left + ci*CELL - CELL/2, 
-                                       mouseY - gridCanvas.getBoundingClientRect().top + ri*CELL - CELL/2, 
-                                       CELL-4, CELL-4);
+                    if(v) drawBlock(ctx, (mousePos.x - rect.left) + (ci*CELL_SIZE) - 25, 
+                                     (mousePos.y - rect.top) + (ri*CELL_SIZE) - 25, 
+                                     CELL_SIZE, dragItem.shape.color);
                 });
             });
         }
 
-        requestAnimationFrame(draw);
+        requestAnimationFrame(render);
     }
 
-    // Drag Məntiqi
-    window.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY));
-    window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-    window.addEventListener('mouseup', handleEnd);
-
-    window.addEventListener('touchstart', e => handleStart(e.touches[0].clientX, e.touches[0].clientY));
-    window.addEventListener('touchmove', e => { 
-        mouseX = e.touches[0].clientX; 
-        mouseY = e.touches[0].clientY; 
-    });
-    window.addEventListener('touchend', handleEnd);
-
-    function handleStart(x, y) {
-        for(let i=0; i<3; i++) {
-            const rect = document.getElementById('block' + i).getBoundingClientRect();
-            if(x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-                if(shapes[i]) {
-                    draggingIdx = i;
-                    isDragging = true;
-                }
-            }
-        }
-    }
-
-    function handleEnd() {
-        if(!isDragging) return;
-        const rect = gridCanvas.getBoundingClientRect();
-        let c = Math.floor((mouseX - rect.left) / CELL);
-        let r = Math.floor((mouseY - rect.top) / CELL);
-
-        if(canPlace(r, c, shapes[draggingIdx])) {
-            placeShape(r, c, shapes[draggingIdx]);
-            shapes[draggingIdx] = null;
-            checkLines();
-            addTrophy();
-            if(shapes.every(s => s === null)) generateShapes();
-        }
-
-        isDragging = false;
-        draggingIdx = -1;
-    }
-
-    function canPlace(r, c, shape) {
-        if(!shape) return false;
-        for(let i=0; i<shape.length; i++) {
-            for(let j=0; j<shape[i].length; j++) {
-                if(shape[i][j]) {
-                    if(r+i < 0 || r+i >= 8 || c+j < 0 || c+j >= 8 || grid[r+i][c+j]) return false;
+    // Məntiq funksiyaları
+    function canPlace(r, c, data) {
+        for(let ri=0; ri<data.length; ri++) {
+            for(let ci=0; ci<data[ri].length; ci++) {
+                if(data[ri][ci]) {
+                    if(r+ri < 0 || r+ri >= 8 || c+ci < 0 || c+ci >= 8 || grid[r+ri][c+ci]) return false;
                 }
             }
         }
         return true;
     }
 
-    function placeShape(r, c, shape) {
-        shape.forEach((row, ri) => {
-            row.forEach((v, ci) => {
-                if(v) grid[r+ri][c+ci] = 1;
-            });
-        });
-    }
-
-    function checkLines() {
-        let linesCleared = 0;
-        // Sətir yoxla
-        for(let r=0; r<8; r++) {
-            if(grid[r].every(v => v === 1)) {
-                grid[r] = Array(8).fill(0);
-                linesCleared++;
-            }
+    function checkMatches() {
+        let toClearR = [], toClearC = [];
+        for(let i=0; i<8; i++) {
+            if(grid[i].every(x => x !== null)) toClearR.push(i);
+            let colFull = true;
+            for(let j=0; j<8; j++) if(!grid[j][i]) colFull = false;
+            if(colFull) toClearC.push(i);
         }
-        // Sütun yoxla
-        for(let c=0; c<8; c++) {
-            let full = true;
-            for(let r=0; r<8; r++) if(!grid[r][c]) full = false;
-            if(full) {
-                for(let r=0; r<8; r++) grid[r][c] = 0;
-                linesCleared++;
-            }
+        
+        toClearR.forEach(r => grid[r] = Array(8).fill(null));
+        toClearC.forEach(c => { for(let i=0; i<8; i++) grid[i][c] = null; });
+        
+        if(toClearR.length > 0 || toClearC.length > 0) {
+            score += (toClearR.length + toClearC.length) * 100;
+            document.getElementById('currentScore').innerText = score;
+            saveScore();
         }
     }
 
-    function addTrophy() {
-        trophies += Math.floor(Math.random() * 20) + 10;
-        document.getElementById('trophyDisplay').innerText = trophies;
-        localStorage.setItem('score_' + playerName, trophies);
+    function saveScore() {
+        localStorage.setItem('bb_score_' + user, score);
         updateLeaderboard();
     }
 
     function updateLeaderboard() {
         let players = [];
-        for(let i=0; i<localStorage.length; i++) {
+        for(let i=0; i<localStorage.length; i++){
             let k = localStorage.key(i);
-            if(k.startsWith('score_')) {
-                players.push({name: k.replace('score_', ''), score: parseInt(localStorage.getItem(k))});
-            }
+            if(k.startsWith('bb_score_')) players.push({n: k.replace('bb_score_',''), s: parseInt(localStorage.getItem(k))});
         }
-        players.sort((a,b) => b.score - a.score);
-        document.getElementById('rankList').innerHTML = players.slice(0, 10).map((p, i) => `
-            <div class="rank-item">
-                <span>${i+1}. ${p.name}</span>
-                <b color="#38bdf8">${p.score}</b>
-            </div>
+        players.sort((a,b) => b.s - a.s);
+        document.getElementById('rankList').innerHTML = players.slice(0,10).map((p, i) => `
+            <div class="rank-item"><span>${i+1}. ${p.n}</span><b>${p.s}</b></div>
         `).join('');
     }
-</script>
 
+    // Event Listeners
+    window.addEventListener('mousedown', e => {
+        trayCanvases.forEach((tc, i) => {
+            const r = tc.getBoundingClientRect();
+            if(e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && trayShapes[i]) {
+                isDragging = true;
+                dragItem = { idx: i, shape: trayShapes[i] };
+            }
+        });
+    });
+
+    window.addEventListener('mousemove', e => { mousePos.x = e.clientX; mousePos.y = e.clientY; });
+
+    window.addEventListener('mouseup', () => {
+        if(isDragging && dragItem) {
+            const rect = canvas.getBoundingClientRect();
+            const gx = Math.floor((mousePos.x - rect.left) / CELL_SIZE);
+            const gy = Math.floor((mousePos.y - rect.top) / CELL_SIZE);
+
+            if(canPlace(gy, gx, dragItem.shape.data)) {
+                dragItem.shape.data.forEach((row, ri) => {
+                    row.forEach((v, ci) => { if(v) grid[gy+ri][gx+ci] = dragItem.shape.color; });
+                });
+                trayShapes[dragItem.idx] = null;
+                checkMatches();
+                if(trayShapes.every(s => s === null)) generateTray();
+            }
+        }
+        isDragging = false;
+        dragItem = null;
+    });
+
+    // Touch dəstəyi
+    window.addEventListener('touchstart', e => {
+        const t = e.touches[0];
+        mousePos.x = t.clientX; mousePos.y = t.clientY;
+        trayCanvases.forEach((tc, i) => {
+            const r = tc.getBoundingClientRect();
+            if(t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom && trayShapes[i]) {
+                isDragging = true;
+                dragItem = { idx: i, shape: trayShapes[i] };
+            }
+        });
+    });
+    window.addEventListener('touchmove', e => { 
+        mousePos.x = e.touches[0].clientX; 
+        mousePos.y = e.touches[0].clientY; 
+    });
+    window.addEventListener('touchend', () => window.dispatchEvent(new Event('mouseup')));
+
+</script>
 </body>
 </html>
