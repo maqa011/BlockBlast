@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Blast Pro - GitHub Edition</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text: #f8fafc;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #ui-layer {
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            background: var(--card-bg);
+            padding: 10px 20px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+
+        #leaderboard {
+            margin-top: 20px;
+            width: 90%;
+            max-width: 400px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #334155;
+            padding: 5px 0;
+        }
+
+        /* Modal Stil */
+        #nameModal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            width: 80%;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 10px 25px;
+            background: var(--accent);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="nameModal">
+        <div class="modal-content">
+            <h2>Xoş Gəlmisiniz!</h2>
+            <p>Sıralama üçün adınızı daxil edin:</p>
+            <input type="text" id="userNameInput" placeholder="Adınız...">
+            <br>
+            <button onclick="saveName()">Başla</button>
+        </div>
+    </div>
+
+    <div id="ui-layer">
+        <h1>BLOCK BLAST</h1>
+        <div class="stats-container">
+            <div>🏆 Kupa: <span id="trophyCount">0</span></div>
+            <div>👤 <span id="displayName">---</span></div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" width="320" height="320"></canvas>
+
+    <div id="leaderboard">
+        <h3>📊 Top Oyunçular</h3>
+        <div id="leaderboardList"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const GRID_SIZE = 8;
+        const CELL_SIZE = canvas.width / GRID_SIZE;
+        
+        let score = 0;
+        let userName = localStorage.getItem('blockBlastUser');
+        let trophies = parseInt(localStorage.getItem('userTrophies')) || 0;
+
+        // Grid sistemi
+        let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+
+        // İlkin yükləmə
+        window.onload = () => {
+            if (!userName) {
+                document.getElementById('nameModal').style.display = 'flex';
+            } else {
+                document.getElementById('nameModal').style.display = 'none';
+                startGame();
+            }
+        };
+
+        function saveName() {
+            const input = document.getElementById('userNameInput').value;
+            if (input.trim().length > 2) {
+                localStorage.setItem('blockBlastUser', input);
+                userName = input;
+                document.getElementById('nameModal').style.display = 'none';
+                startGame();
+            }
+        }
+
+        function startGame() {
+            document.getElementById('displayName').innerText = userName;
+            document.getElementById('trophyCount').innerText = trophies;
+            updateLeaderboard();
+            drawGrid();
+        }
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    ctx.strokeStyle = '#334155';
+                    ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    if (grid[r][c] !== 0) {
+                        ctx.fillStyle = varColor(grid[r][c]);
+                        ctx.fillRect(c * CELL_SIZE + 2, r * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                    }
+                }
+            }
+        }
+
+        function varColor(val) {
+            const colors = ["", "#38bdf8", "#fbbf24", "#f87171", "#4ade80", "#a78bfa"];
+            return colors[val % colors.length];
+        }
+
+        // Blok yerləşdirmə simulyasiyası (Sadələşdirilmiş klik məntiqi)
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const col = Math.floor(x / CELL_SIZE);
+            const row = Math.floor(y / CELL_SIZE);
+
+            if (grid[row][col] === 0) {
+                grid[row][col] = Math.floor(Math.random() * 5) + 1;
+                checkLines();
+                drawGrid();
+                
+                // Hər uğurlu hərəkətdə təsadüfi kupa şansı
+                if (Math.random() > 0.7) {
+                    addTrophy();
+                }
+            }
+        });
+
+        function checkLines() {
+            // Sətir və sütun yoxlama məntiqi bura əlavə edilir
+            // Sadəlik üçün hər klik xal verir
+        }
+
+        function addTrophy() {
+            let win = Math.floor(Math.random() * 5) + 1;
+            trophies += win;
+            localStorage.setItem('userTrophies', trophies);
+            document.getElementById('trophyCount').innerText = trophies;
+            updateLeaderboard();
+        }
+
+        function updateLeaderboard() {
+            let players = JSON.parse(localStorage.getItem('allPlayers')) || [];
+            
+            // Mövcud oyunçunu yenilə və ya əlavə et
+            let pIdx = players.findIndex(p => p.name === userName);
+            if(pIdx > -1) {
+                players[pIdx].score = trophies;
+            } else {
+                players.push({name: userName, score: trophies});
+            }
+
+            players.sort((a, b) => b.score - a.score);
+            players = players.slice(0, 5); // Top 5
+            localStorage.setItem('allPlayers', JSON.stringify(players));
+
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = players.map((p, i) => `
+                <div class="rank-item">
+                    <span>${i+1}. ${p.name}</span>
+                    <b>${p.score} 🏆</b>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
