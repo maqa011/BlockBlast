@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Block Blast Pro - Final Edition</title>
+    <title>Block Blast Pro - Final Preview Edition</title>
     <style>
         :root {
             --bg-main: #3b4a8b;
@@ -12,12 +12,13 @@
             --accent-yellow: #ffcc00;
             --white: #ffffff;
             --danger: #ff4d4d;
+            --highlight: rgba(255, 255, 255, 0.4);
         }
 
         body {
             background: var(--bg-main);
             color: var(--white);
-            font-family: 'Arial Rounded MT Bold', sans-serif;
+            font-family: 'Arial Rounded MT Bold', 'Helvetica', sans-serif;
             margin: 0;
             display: flex;
             justify-content: center;
@@ -27,7 +28,7 @@
             touch-action: none;
         }
 
-        /* Sol Sıralama */
+        /* Sol Sıralama Paneli */
         #leaderboard {
             position: absolute;
             left: 20px;
@@ -38,35 +39,18 @@
             padding: 15px;
             border: 2px solid rgba(255,255,255,0.1);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .lb-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        /* Oyun Mərkəzi */
-        #game-container {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 15px;
         }
 
-        #score-view {
-            font-size: 70px;
-            font-weight: 900;
-            margin: 0;
-            text-shadow: 3px 3px 0px rgba(0,0,0,0.2);
-        }
+        .lb-title { text-align: center; color: var(--accent-yellow); margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .lb-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
 
-        canvas {
-            border-radius: 12px;
-            box-shadow: 0 0 40px rgba(0,0,0,0.4);
-            cursor: pointer;
-        }
+        /* Oyun Mərkəzi */
+        #game-container { display: flex; flex-direction: column; align-items: center; gap: 15px; position: relative; }
+        #score-view { font-size: 80px; font-weight: 900; margin: 0; text-shadow: 4px 4px 0px rgba(0,0,0,0.2); }
+
+        canvas { border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.4); cursor: pointer; }
 
         #tray {
             display: flex;
@@ -74,7 +58,10 @@
             padding: 15px;
             background: rgba(0,0,0,0.2);
             border-radius: 20px;
+            margin-top: 10px;
         }
+
+        .tray-canvas { background: rgba(255,255,255,0.03); border-radius: 10px; }
 
         /* Effektlər */
         #combo-msg {
@@ -90,11 +77,10 @@
             opacity: 0;
             transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
         .active-msg { transform: translate(-50%, -50%) scale(1.1) !important; opacity: 1 !important; }
 
-        /* Uduzmaq Səhifəsi */
-        #game-over {
+        /* Uduzmaq & Giriş */
+        #overlay {
             position: fixed;
             inset: 0;
             background: rgba(15, 23, 42, 0.95);
@@ -103,80 +89,49 @@
             justify-content: center;
             align-items: center;
             z-index: 2000;
-            text-align: center;
-        }
-
-        /* Giriş Paneli */
-        #auth-screen {
-            position: fixed;
-            inset: 0;
-            background: var(--bg-main);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 3000;
-        }
-
-        .modal-box {
-            background: var(--panel-bg);
-            padding: 40px;
-            border-radius: 30px;
-            border: 4px solid var(--accent-yellow);
-            text-align: center;
         }
 
         .btn {
             background: var(--accent-yellow);
             border: none;
-            padding: 15px 40px;
+            padding: 15px 45px;
             border-radius: 50px;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             cursor: pointer;
-            margin-top: 20px;
+            margin-top: 25px;
+            transition: 0.2s;
         }
+        .btn:hover { transform: scale(1.1); }
 
-        input {
-            padding: 12px;
-            border-radius: 10px;
-            border: none;
-            width: 200px;
-            text-align: center;
-            font-size: 1.1rem;
-        }
+        input { padding: 15px; border-radius: 12px; border: none; width: 220px; text-align: center; font-size: 1.2rem; }
 
-        /* Ulduz animasiyası üçün canvas */
-        #fx-canvas {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 90;
-        }
+        #fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 90; }
     </style>
 </head>
 <body>
 
-<canvas id="fx-canvas"></canvas>
-<div id="combo-msg">MÖHTƏŞƏM!</div>
+<canvas id="fx-layer"></canvas>
+<div id="combo-msg">AMAZING!</div>
 
-<div id="auth-screen">
-    <div class="modal-box">
-        <h2>XOŞ GƏLDİN!</h2>
-        <p>Adını bir dəfə daxil et:</p>
-        <input type="text" id="userName" placeholder="Adın...">
+<div id="auth-screen" style="position: fixed; inset: 0; background: var(--bg-main); display: none; justify-content: center; align-items: center; z-index: 3000;">
+    <div style="background: var(--panel-bg); padding: 50px; border-radius: 35px; border: 4px solid var(--accent-yellow); text-align: center;">
+        <h1 style="margin-top: 0;">BLOCK BLAST</h1>
+        <p>Xoş gəldin! Adını daxil et:</p>
+        <input type="text" id="userNameInput" placeholder="Oyunçu adı...">
         <br>
         <button class="btn" onclick="saveUser()">BAŞLA</button>
     </div>
 </div>
 
-<div id="game-over">
-    <h1 style="font-size: 4rem; color: var(--danger);">OYUN BİTDİ!</h1>
-    <p style="font-size: 1.5rem;">Sənin Xalın: <span id="finalScore">0</span></p>
-    <button class="btn" onclick="restartGame()">TƏKRAR BAŞLA</button>
+<div id="overlay">
+    <h1 style="font-size: 4.5rem; color: var(--danger); margin: 0;">OYUN BİTDİ!</h1>
+    <p style="font-size: 1.8rem;">Yekun Xal: <b id="finalScore" style="color: var(--accent-yellow);">0</b></p>
+    <button class="btn" onclick="restartGame()">YENİDƏN BAŞLA</button>
 </div>
 
 <div id="leaderboard">
-    <h3 style="text-align: center; color: var(--accent-yellow);">🏆 REKORDLAR</h3>
+    <h3 class="lb-title">🏆 REKORDLAR</h3>
     <div id="rankRows"></div>
 </div>
 
@@ -184,16 +139,16 @@
     <div id="score-view">0</div>
     <canvas id="main-canvas" width="400" height="400"></canvas>
     <div id="tray">
-        <canvas id="t0" width="100" height="100"></canvas>
-        <canvas id="t1" width="100" height="100"></canvas>
-        <canvas id="t2" width="100" height="100"></canvas>
+        <canvas id="t0" class="tray-canvas" width="100" height="100"></canvas>
+        <canvas id="t1" class="tray-canvas" width="100" height="100"></canvas>
+        <canvas id="t2" class="tray-canvas" width="100" height="100"></canvas>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById('main-canvas');
     const ctx = canvas.getContext('2d');
-    const fxCanvas = document.getElementById('fx-canvas');
+    const fxCanvas = document.getElementById('fx-layer');
     const fxCtx = fxCanvas.getContext('2d');
     const trayCanvases = [document.getElementById('t0'), document.getElementById('t1'), document.getElementById('t2')];
     
@@ -202,8 +157,8 @@
     let score = 0, displayScore = 0;
     let user = localStorage.getItem('bb_username');
     let stars = [];
+    let isGameOver = false;
 
-    // Rənglər
     const COLORS = {
         blue: {m:'#4da6ff', l:'#99ccff', d:'#0066cc'},
         red: {m:'#ff4d4d', l:'#ff9999', d:'#cc0000'},
@@ -226,7 +181,6 @@
     let drag = null;
     let mouse = {x:0, y:0};
 
-    // Başlanğıc Yoxlaması
     window.onload = () => {
         fxCanvas.width = window.innerWidth;
         fxCanvas.height = window.innerHeight;
@@ -238,7 +192,7 @@
     };
 
     function saveUser() {
-        const val = document.getElementById('userName').value.trim();
+        const val = document.getElementById('userNameInput').value.trim();
         if(val.length < 2) return;
         localStorage.setItem('bb_username', val);
         user = val;
@@ -248,7 +202,8 @@
 
     function initGame() {
         grid = Array(8).fill().map(() => Array(8).fill(null));
-        score = 0; displayScore = 0;
+        score = 0; displayScore = 0; isGameOver = false;
+        document.getElementById('score-view').innerText = "0";
         generateTray();
         updateLeaderboard();
         requestAnimationFrame(loop);
@@ -261,31 +216,35 @@
 
     // Uduzmaq Yoxlaması
     function checkGameOver() {
-        let anyPossible = false;
+        let possible = false;
         trayShapes.forEach(shape => {
             if(!shape) return;
             for(let r=0; r<8; r++) {
                 for(let c=0; c<8; c++) {
-                    if(canPlace(r, c, shape.d)) anyPossible = true;
+                    if(canPlace(r, c, shape.d)) possible = true;
                 }
             }
         });
-
-        if(!anyPossible && trayShapes.some(s => s !== null)) {
-            setTimeout(() => {
-                document.getElementById('finalScore').innerText = score;
-                document.getElementById('game-over').style.display = 'flex';
-            }, 1000);
+        if(!possible && trayShapes.some(s => s !== null)) {
+            isGameOver = true;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('overlay').style.display = 'flex';
         }
     }
 
     function restartGame() {
-        document.getElementById('game-over').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
         initGame();
     }
 
-    // Blok Çəkmə
-    function drawBlock(c, x, y, size, clrKey, alpha = 1) {
+    function drawBlock(c, x, y, size, clrKey, alpha = 1, isHighlight = false) {
+        if(isHighlight) {
+            c.globalAlpha = 0.6;
+            c.fillStyle = "#ffffff";
+            c.fillRect(x+2, y+2, size-4, size-4);
+            c.globalAlpha = 1;
+            return;
+        }
         const clr = COLORS[clrKey];
         c.globalAlpha = alpha;
         c.fillStyle = clr.m;
@@ -297,40 +256,69 @@
         c.globalAlpha = 1;
     }
 
-    // Ulduz Yağışı Effekti
     function createStars() {
-        for(let i=0; i<30; i++) {
+        for(let i=0; i<40; i++) {
             stars.push({
-                x: window.innerWidth/2,
-                y: window.innerHeight/2,
-                vx: (Math.random()-0.5)*15,
-                vy: (Math.random()-0.5)*15,
-                size: Math.random()*5+2,
-                life: 1
+                x: window.innerWidth/2, y: window.innerHeight/2,
+                vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
+                size: Math.random()*6+2, life: 1
             });
         }
+    }
+
+    // Gələcəkdə silinəcək xətləri tapmaq
+    function getLinesToClear(tempGrid) {
+        let rs = [], cs = [];
+        for(let i=0; i<8; i++) {
+            if(tempGrid[i].every(x => x !== null)) rs.push(i);
+            let f = true;
+            for(let j=0; j<8; j++) if(!tempGrid[j][i]) f = false;
+            if(f) cs.push(i);
+        }
+        return {rs, cs};
     }
 
     function loop() {
         ctx.clearRect(0,0,400,400);
         fxCtx.clearRect(0,0,fxCanvas.width, fxCanvas.height);
 
-        // Xal Artımı
         if(displayScore < score) {
             displayScore += Math.ceil((score - displayScore)/10);
             document.getElementById('score-view').innerText = displayScore;
         }
 
-        // Grid
+        // Preview Məntiqi (Hansı bloklar udacaq?)
+        let highlightLines = {rs: [], cs: []};
+        if(drag) {
+            const r = canvas.getBoundingClientRect();
+            const gx = Math.floor((mouse.x - r.left)/50);
+            const gy = Math.floor((mouse.y - r.top)/50);
+            if(canPlace(gy, gx, drag.s.d)) {
+                // Müvəqqəti grid yaradıb yoxlayırıq
+                let tempGrid = grid.map(row => [...row]);
+                drag.s.d.forEach((row, ri) => row.forEach((v, ci) => {
+                    if(v) tempGrid[gy+ri][gx+ci] = drag.s.c;
+                }));
+                highlightLines = getLinesToClear(tempGrid);
+            }
+        }
+
+        // Grid Çəkilişi
         for(let r=0; r<8; r++) {
             for(let c=0; c<8; c++) {
                 ctx.fillStyle = "rgba(0,0,0,0.15)";
                 ctx.fillRect(c*50+2, r*50+2, 46, 46);
-                if(grid[r][c]) drawBlock(ctx, c*50, r*50, 50, grid[r][c]);
+                
+                // Əgər bu xana silinəcəksə ferqli rəngdə (Highlight) çək
+                if(highlightLines.rs.includes(r) || highlightLines.cs.includes(c)) {
+                    drawBlock(ctx, c*50, r*50, 50, '', 1, true);
+                } else if(grid[r][c]) {
+                    drawBlock(ctx, c*50, r*50, 50, grid[r][c]);
+                }
             }
         }
 
-        // Tray
+        // Tray Çəkilişi
         trayCanvases.forEach((tc, i) => {
             const tctx = tc.getContext('2d');
             tctx.clearRect(0,0,100,100);
@@ -342,28 +330,29 @@
             }
         });
 
-        // Drag
+        // Sürüklənən Blok
         if(drag) {
             const r = canvas.getBoundingClientRect();
             const gx = Math.floor((mouse.x - r.left)/50);
             const gy = Math.floor((mouse.y - r.top)/50);
+            
+            // Ghost Preview
             if(canPlace(gy, gx, drag.s.d)) {
                 drag.s.d.forEach((row, ri) => row.forEach((v, ci) => {
                     if(v) drawBlock(ctx, (gx+ci)*50, (gy+ri)*50, 50, drag.s.c, 0.3);
                 }));
             }
+            // Sürüklənən real blok
             drag.s.d.forEach((row, ri) => row.forEach((v, ci) => {
                 if(v) drawBlock(ctx, (mouse.x - r.left) + ci*50 - 25, (mouse.y - r.top) + ri*50 - 25, 50, drag.s.c);
             }));
         }
 
-        // Ulduzları hərəkət etdir
+        // FX (Ulduzlar)
         stars.forEach((s, i) => {
             s.x += s.vx; s.y += s.vy; s.life -= 0.02;
-            fxCtx.fillStyle = `rgba(255, 204, 0, ${s.life})`;
-            fxCtx.beginPath();
-            fxCtx.arc(s.x, s.y, s.size, 0, Math.PI*2);
-            fxCtx.fill();
+            fxCtx.fillStyle = `rgba(255, 255, 255, ${s.life})`;
+            fxCtx.beginPath(); fxCtx.arc(s.x, s.y, s.size, 0, Math.PI*2); fxCtx.fill();
             if(s.life <= 0) stars.splice(i, 1);
         });
 
@@ -380,17 +369,11 @@
     }
 
     function checkLines() {
-        let rs = [], cs = [];
-        for(let i=0; i<8; i++) {
-            if(grid[i].every(x => x !== null)) rs.push(i);
-            let f = true;
-            for(let j=0; j<8; j++) if(!grid[j][i]) f = false;
-            if(f) cs.push(i);
-        }
+        let {rs, cs} = getLinesToClear(grid);
         if(rs.length || cs.length) {
             rs.forEach(r => grid[r] = Array(8).fill(null));
             cs.forEach(c => { for(let i=0; i<8; i++) grid[i][c] = null; });
-            score += (rs.length + cs.length) * 120;
+            score += (rs.length + cs.length) * 150;
             showCombo();
             createStars();
             saveScore();
@@ -398,7 +381,7 @@
     }
 
     function showCombo() {
-        const msgs = ["MOHTESEM!", "ELA!", "SUPER!", "AMAZING!"];
+        const msgs = ["AMAZING!", "MÖHTƏŞƏM!", "BRAVO!", "SÜPER!", "ƏLA!"];
         const el = document.getElementById('combo-msg');
         el.innerText = msgs[Math.floor(Math.random()*msgs.length)];
         el.classList.add('active-msg');
@@ -422,8 +405,9 @@
         `).join('');
     }
 
-    // Events
+    // Mouse/Touch Events
     const start = (ex, ey) => {
+        if(isGameOver) return;
         trayCanvases.forEach((tc, i) => {
             const r = tc.getBoundingClientRect();
             if(ex>=r.left && ex<=r.right && ey>=r.top && ey<=r.bottom && trayShapes[i]) {
@@ -455,7 +439,7 @@
     window.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY));
     window.addEventListener('touchmove', e => {mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY;});
     window.addEventListener('touchend', end);
-
 </script>
+
 </body>
 </html>
